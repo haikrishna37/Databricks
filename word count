@@ -3,7 +3,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import split,regexp_replace,explode,col
 
 spark = SparkSession.builder \
-                .appName("CSV to DB") \
+                .appName("Words Count") \
                 .master("local") \
                 .getOrCreate()
 
