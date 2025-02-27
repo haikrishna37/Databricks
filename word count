@@ -1,0 +1,37 @@
+import wikipedia
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import split,regexp_replace,explode,col
+
+spark = SparkSession.builder \
+                .appName("CSV to DB") \
+                .master("local") \
+                .getOrCreate()
+
+def get_wiki_content(title, word_count=10000):
+    try:
+        contnt = wikipedia.page(title).content
+        words = contnt.split()
+        trim_content = " ".join(words[:word_count])
+        return trim_content
+    except:
+        print("unexpected error!")
+
+def save_file(content,filename="wikipedia.txt"):
+        with open(filename,"w",encoding="utf-8") as my_file:
+            my_file.write(content)
+        print(f"File saved: {filename}")
+
+if __name__ == "__main__":
+     title = "Artifical Intelligence"
+     content = get_wiki_content(title)
+     if content:
+        save_file(content)
+        read_file = spark.read.text("wikipedia.txt")
+        clean_file = read_file.withColumn("clean_string",regexp_replace(read_file["value"],"[^a-zA-Z0-9 ]",""))
+        split_file = clean_file.withColumn("split_array", split(clean_file["value"], " "))
+        # Explode the array to create a row for each word
+        word_counts = split_file.select(explode(col("split_array")).alias("word")) \
+                        .groupBy("word") \
+                        .count() \
+                        .orderBy(col("count").desc()).collect()
+        print("the output ",word_counts)
