@@ -28,10 +28,10 @@ if __name__ == "__main__":
         save_file(content)
         read_file = spark.read.text("wikipedia.txt")
         clean_file = read_file.withColumn("clean_string",regexp_replace(read_file["value"],"[^a-zA-Z0-9 ]",""))
-        split_file = clean_file.withColumn("split_array", split(clean_file["value"], " "))
+        split_file = clean_file.withColumn("split_array", split(clean_file["clean_string"], " "))
         # Explode the array to create a row for each word
         word_counts = split_file.select(explode(col("split_array")).alias("word")) \
                         .groupBy("word") \
                         .count() \
                         .orderBy(col("count").desc()).collect()
-        print("the output ",word_counts)
+        word_counts.show()
